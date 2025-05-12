@@ -3,16 +3,66 @@ name: merge-trackers
 on:
   schedule:
     - cron: "0 2 * * *"
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: cd MergeTrackers
-      - run: npm install
-      - run: node index.js
+          node-version: 18
+      - name: Cd Project
+        run: cd MergeTrackers
+      - name: install
+        run: npm install
+      - name: Run Node.js script
+        run: node index.js
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: trackers-files
+          path: |
+            MergeTrackers.txt
+            MergeTrackers_Deduplicated.txt
+          retention-days: 5
 
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: trackers-files
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
+      - name: Upload MergeTrackers.txt
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./MergeTrackers.txt
+          asset_name: MergeTrackers.txt
+          asset_content_type: text/plain
+      - name: Upload MergeTrackers_Deduplicated.txt
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./MergeTrackers_Deduplicated.txt
+          asset_name: MergeTrackers_Deduplicated.txt
+          asset_content_type: text/plain
