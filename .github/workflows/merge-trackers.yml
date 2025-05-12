@@ -19,6 +19,15 @@ jobs:
         run: npm install
       - name: Run Node.js script
         run: node index.js
+
+      - name: 获取新版本号
+        run: |
+          # 尝试从 package.json 中获取版本号
+          VERSION=$(date +%Y%m%d)
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "New version:${VERSION}"
+          echo "New version GITHUB_ENV:${GITHUB_ENV}"
+        
       - name: 创建Release
         id: create_release
         uses: softprops/action-gh-release@v2
