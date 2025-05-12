@@ -22,16 +22,8 @@ async function cloneRepositories() {
     }
 }
 
-
-
-
-
-
-
-
-
 // 配置
-const outputFile = 'MergeTrackers.txt';
+const outputFile = 'MergeTrackersTmp.txt';
 const excludeFile = 'blacklist.txt';
 
 // 获取当前目录下所有 txt 文件（排除 excludeFile）
@@ -126,24 +118,50 @@ function sortFile(inputFile, outputFile, order, dedup) {
 }
 
 
+async function processFiles() {
+    // 定义文件路径
+    const inputFile = path.join(__dirname, 'MergeTrackersTmp.txt');
+    const outputFile = path.join(__dirname, 'MergeTrackers.txt');
 
+// 读取输入文件
+    fs.readFile(inputFile, 'utf8', (err, data) => {
+        if (err) {
+            console.error('读取文件时出错:', err);
+            return;
+        }
+
+        // 处理数据：将所有逗号替换为换行符
+        const processedData = data.split(',').join('\n');
+
+        // 写入输出文件
+        fs.writeFile(outputFile, processedData, 'utf8', (err) => {
+            if (err) {
+                console.error('写入文件时出错:', err);
+                return;
+            }
+            console.log('文件处理完成，已保存为 MergeTrackers.txt');
+
+
+            const inputFile = 'MergeTrackers.txt';
+            const outputFile1 = 'MergeTrackers_Deduplicated.txt'; // 可以改为相同的文件名直接覆盖原文件
+
+// 执行排序
+            if (fs.existsSync(inputFile)) {
+                sortFile(inputFile, outputFile1, 'asc', true);
+            } else {
+                console.error(`错误: 输入文件 ${inputFile} 不存在`);
+            }
+
+        });
+    });
+}
 
 async function main() {
     await cloneRepositories();
     const allTxtFiles = getAllTxtFiles(process.cwd());
     console.log(`找到 ${allTxtFiles.length} 个 txt 文件需要合并（排除 ${excludeFile}）`);
     mergeFiles(allTxtFiles, outputFile);
-
-
-    const inputFile = 'MergeTrackers.txt';
-    const outputFile1 = 'MergeTrackers_Deduplicated.txt'; // 可以改为相同的文件名直接覆盖原文件
-
-// 执行排序
-    if (fs.existsSync(inputFile)) {
-        sortFile(inputFile, outputFile1, 'asc', true);
-    } else {
-        console.error(`错误: 输入文件 ${inputFile} 不存在`);
-    }
+    processFiles()
 }
 
 main()
